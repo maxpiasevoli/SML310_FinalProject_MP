@@ -73,10 +73,12 @@ y.rep.m2[1,,]
 
 # stop and frisk models
 #n.ep <- as.data.frame(read.csv("2014_arrests.csv", sep=","))
-n.ep <- as.data.frame(read.csv("2014_arrests_all_crimes.csv", sep=","))
+n.ep <- as.data.frame(read.csv("2014_arrests_ones.csv", sep=","))
 y.ep <- as.data.frame(read.csv("20152016_stops.csv", sep=","))
-#n.ep.z <- as.data.frame(read.csv("2014_arrests_zeros.csv", sep=","))
-n.ep.z <- as.data.frame(read.csv("2014_arrests_zeros_all_crimes.csv", sep=","))
+n.ep.z <- as.data.frame(read.csv("2014_arrests_zeros.csv", sep=","))
+#n.ep <- as.data.frame(read.csv("2014_arrests_all_crimes.csv", sep=","))
+#y.ep <- as.data.frame(read.csv("20152016_stops_all_crimes.csv", sep=","))
+#n.ep.z <- as.data.frame(read.csv("2014_arrests_zeros_all_crimes.csv", sep=","))
 
 
 n.ep.lt10 <- subset(n.ep, Ethnic_Comp_Cat==0, select=c("Precinct", "Race", "Race_Int", "Eth_Pop_In_Precinct", "Occurrences"))
@@ -90,11 +92,16 @@ y.ep.1040 <- subset(y.ep, Ethnic_Comp_Cat==1, select=c("Precinct", "Race", "Race
 y.ep.gt40 <- subset(y.ep, Ethnic_Comp_Cat==2, select=c("Precinct", "Race", "Race_Int", "Eth_Pop_In_Precinct", "Occurrences"))
 
 # lt10 hm fit for model 3
+numIters = 15000
+nChains = 4
 current.n.ep = n.ep.lt10 
 current.y.ep = y.ep.lt10
 sample.index <- nrow(current.n.ep)
 dataList.2 <- list(sample_index=sample.index, n=current.n.ep$Occurrences, y=current.y.ep$Occurrences, sample_race=current.y.ep$Race_Int)
-saf.m3 <- stan(file='sf_model3.stan', data=dataList.2, iter=1000, chains=4) # model with intercept
+saf.m3 <- stan(file='sf_model3.stan', 
+               data=dataList.2,
+               chains = nChains,
+               iter = numIters) 
 print(saf.m3, pars = c("beta","lp__"))
 
 # extract parameters 
@@ -111,10 +118,14 @@ for (i in 1:sample.index) {
 }
 samples_m3 = rpois(sample.index, lambdas_m3)
 current.y.ep$Y_Pred_M3 = samples_m3
+alpha_m3
 
 
 # lt10 hm fit for model 4
-saf.m4 <- stan(file='sf_model4.stan', data=dataList.2, iter=1000, chains=4) # model with intercept
+saf.m4 <- stan(file='sf_model4.stan', 
+               data=dataList.2, 
+               chains = nChains,
+               iter = numIters) 
 print(saf.m4, pars = c("beta","lp__"))
 
 # extract parameters
@@ -132,14 +143,15 @@ for (i in 1:sample.index) {
 }
 samples_m4 = rpois(sample.index, lambdas_m4)
 current.y.ep$Y_Pred_M4 = samples_m4
+alpha_m4
 
 
 # lt10 hm fit for model 5
-# I use n.ep.z for this model since the output of a poisson distribution 
-# in stan must be integer valued; not real
-current.n.ep = n.ep.z.lt10
 dataList.3 <- list(sample_index=sample.index, n=current.n.ep$Occurrences, y=current.y.ep$Occurrences, sample_race=current.y.ep$Race_Int, eth_pop=current.y.ep$Eth_Pop_In_Precinct)
-saf.m5 <- stan(file='sf_model5.stan', data=dataList.3, iter=1000, chains=4) # model with intercept
+saf.m5 <- stan(file='sf_model5.stan', 
+               data=dataList.3, 
+               iter=numIters, 
+               chains=nChains) 
 print(saf.m5, pars = c("beta","lp__"))
 
 # extract parameters
@@ -157,5 +169,6 @@ for (i in 1:sample.index) {
 }
 samples_m5 = rpois(sample.index, lambdas_m5)
 current.y.ep$Y_Pred_M5 = samples_m5
+alpha_m5
 
 #write.csv(current.y.ep, file='./sf_all_models_w_reps.csv')

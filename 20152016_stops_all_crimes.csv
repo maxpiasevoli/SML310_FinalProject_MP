@@ -35,6 +35,9 @@ Precinct,Ethnic_Comp_Cat,Race,Race_Int,Eth_Pop_In_Precinct,Occurrences
 20,0,W,1,77140,1
 20,0,B,2,2998,0
 20,0,Q,3,9595,0
+22,2,W,1,0,0
+22,2,B,2,2,0
+22,2,Q,3,1,0
 23,1,W,1,12715,2
 23,1,B,2,19647,42
 23,1,Q,3,36005,13
@@ -77,6 +80,9 @@ Precinct,Ethnic_Comp_Cat,Race,Race_Int,Eth_Pop_In_Precinct,Occurrences
 44,1,W,1,2566,3
 44,1,B,2,43491,141
 44,1,Q,3,98751,85
+45,1,W,1,33804,0
+45,1,B,2,28941,0
+45,1,Q,3,51984,0
 46,1,W,1,2012,1
 46,1,B,2,36517,78
 46,1,Q,3,92234,24
@@ -113,6 +119,9 @@ Precinct,Ethnic_Comp_Cat,Race,Race_Int,Eth_Pop_In_Precinct,Occurrences
 67,2,W,1,3947,0
 67,2,B,2,136830,35
 67,2,Q,3,12184,0
+68,0,W,1,70217,0
+68,0,B,2,2124,0
+68,0,Q,3,20356,0
 69,2,W,1,4325,0
 69,2,B,2,75795,24
 69,2,Q,3,6045,0
@@ -194,6 +203,9 @@ Precinct,Ethnic_Comp_Cat,Race,Race_Int,Eth_Pop_In_Precinct,Occurrences
 110,0,W,1,11229,2
 110,0,B,2,11043,4
 110,0,Q,3,86521,17
+111,0,W,1,50020,0
+111,0,B,2,2294,0
+111,0,Q,3,13936,0
 112,0,W,1,56706,4
 112,0,B,2,3291,1
 112,0,Q,3,18382,0
@@ -215,3 +227,6 @@ Precinct,Ethnic_Comp_Cat,Race,Race_Int,Eth_Pop_In_Precinct,Occurrences
 122,0,W,1,102714,11
 122,0,B,2,4439,8
 122,0,Q,3,17651,6
+123,0,W,1,87329,0
+123,0,B,2,846,0
+123,0,Q,3,9724,0
