@@ -92,7 +92,7 @@ y.ep.1040 <- subset(y.ep, Ethnic_Comp_Cat==1, select=c("Precinct", "Race", "Race
 y.ep.gt40 <- subset(y.ep, Ethnic_Comp_Cat==2, select=c("Precinct", "Race", "Race_Int", "Eth_Pop_In_Precinct", "Occurrences"))
 
 # lt10 hm fit for model 3
-numIters = 15000
+numIters = 1000
 nChains = 4
 current.n.ep = n.ep.lt10 
 current.y.ep = y.ep.lt10

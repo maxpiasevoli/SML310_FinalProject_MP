@@ -11,7 +11,7 @@ parameters {
   vector[sample_index] epsilon;
   vector[1] mu;
   vector[1] gamma;
-  vector[2] sigma;
+  real<lower=0> sigma[2];
 }
 transformed parameters {
   vector[sample_index] lambda;

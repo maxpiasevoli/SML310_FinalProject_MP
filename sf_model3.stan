@@ -10,7 +10,7 @@ parameters {
   vector[sample_index / 3] beta;
   vector[sample_index] epsilon;
   vector[1] mu;
-  vector[2] sigma;
+  real<lower = 0> sigma[2];
 }
 transformed parameters {
   vector[sample_index] lambda;
