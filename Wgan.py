@@ -18,7 +18,7 @@ from keras.layers import BatchNormalization
 from keras.initializers import RandomNormal
 from keras.constraints import Constraint
 from matplotlib import pyplot
-import pickle
+import sys
 
 # clip model weights to a given hypercube
 class ClipConstraint(Constraint):
@@ -101,20 +101,15 @@ def define_gan(generator, critic):
 	return model
 
 # load images
-def load_real_samples():
+def load_real_samples(which_dataset):
 	# load dataset
-	with open('mnist.pickle', 'rb') as fp:
-		trainX, trainy, _, _ = pickle.load(fp)
-	#(trainX, trainy), (_, _) = load_data()
-	# select all of the examples for a given class
-	selected_ix = trainy == 7
-	X = trainX[selected_ix]
-	# expand to 3d, e.g. add channels
-	X = expand_dims(X, axis=-1)
-	# convert from ints to floats
-	X = X.astype('float32')
-	# scale from [0,255] to [-1,1]
-	X = (X - 127.5) / 127.5
+	if which_dataset == 0:
+		df = pd.read_csv('./data/synDist.csv')
+		X = df.values
+	elif which_dataset == 1:
+		pass
+	else: # which_dataset == 2
+		pass
 	return X
 
 # select real samples
@@ -229,8 +224,12 @@ critic = define_critic()
 generator = define_generator(latent_dim)
 # create the gan
 gan_model = define_gan(generator, critic)
-# load image data
-dataset = load_real_samples()
+# load correct dataset
+# 0 for synthetic
+# 1 for behavioral learning experiment
+# 2 for stop and frisk
+which_dataset = sys.argv[1]
+dataset = load_real_samples(which_dataset)
 print(dataset.shape)
 # train model
 train(generator, critic, gan_model, dataset, latent_dim)
