@@ -1,7 +1,8 @@
 # example of a wgan for generating handwritten digits
 from numpy import expand_dims
 from numpy import mean
-from numpy import ones
+from numpy import ones, array
+from numpy import hstack, vstack
 from numpy.random import randn
 from numpy.random import randint
 from keras.datasets.mnist import load_data
@@ -19,6 +20,12 @@ from keras.initializers import RandomNormal
 from keras.constraints import Constraint
 from matplotlib import pyplot
 import sys
+import pandas as pd
+import seaborn as sns
+from sklearn.manifold import TSNE
+from pylab import savefig
+
+ALPHA = 0.00005
 
 # clip model weights to a given hypercube
 class ClipConstraint(Constraint):
@@ -39,50 +46,49 @@ def wasserstein_loss(y_true, y_pred):
 	return backend.mean(y_true * y_pred)
 
 # define the standalone critic model
-def define_critic(in_shape=(28,28,1)):
+def define_critic(in_shape):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
 	# weight constraint
 	const = ClipConstraint(0.01)
 	# define model
 	model = Sequential()
-	# downsample to 14x14
-	model.add(Conv2D(64, (4,4), strides=(2,2), padding='same', kernel_initializer=init, kernel_constraint=const, input_shape=in_shape))
+
+	model.add(Dense(16, kernel_initializer=init, kernel_constraint=const, input_shape=(in_shape,)))
 	model.add(BatchNormalization())
 	model.add(LeakyReLU(alpha=0.2))
-	# downsample to 7x7
-	model.add(Conv2D(64, (4,4), strides=(2,2), padding='same', kernel_initializer=init, kernel_constraint=const))
+
+	model.add(Dense(16, kernel_initializer=init, kernel_constraint=const))
 	model.add(BatchNormalization())
 	model.add(LeakyReLU(alpha=0.2))
 	# scoring, linear activation
-	model.add(Flatten())
 	model.add(Dense(1))
 	# compile model
-	opt = RMSprop(lr=0.00005)
+	opt = RMSprop(lr=ALPHA)
 	model.compile(loss=wasserstein_loss, optimizer=opt)
 	return model
 
 # define the standalone generator model
-def define_generator(latent_dim):
+def define_generator(output_dim, latent_dim):
 	# weight initialization
 	init = RandomNormal(stddev=0.02)
 	# define model
 	model = Sequential()
-	# foundation for 7x7 image
-	n_nodes = 128 * 7 * 7
-	model.add(Dense(n_nodes, kernel_initializer=init, input_dim=latent_dim))
+
+	model.add(Dense(32, kernel_initializer=init, input_shape=(latent_dim,)))
+	model.add(BatchNormalization()) # not in provided code, but I added this
 	model.add(LeakyReLU(alpha=0.2))
-	model.add(Reshape((7, 7, 128)))
-	# upsample to 14x14
-	model.add(Conv2DTranspose(128, (4,4), strides=(2,2), padding='same', kernel_initializer=init))
+
+	model.add(Dense(16, kernel_initializer=init))
 	model.add(BatchNormalization())
 	model.add(LeakyReLU(alpha=0.2))
-	# upsample to 28x28
-	model.add(Conv2DTranspose(128, (4,4), strides=(2,2), padding='same', kernel_initializer=init))
+
+	model.add(Dense(16, kernel_initializer=init))
 	model.add(BatchNormalization())
 	model.add(LeakyReLU(alpha=0.2))
-	# output 28x28x1
-	model.add(Conv2D(1, (7,7), activation='tanh', padding='same', kernel_initializer=init))
+
+	# output layer
+	model.add(Dense(output_dim, kernel_initializer=init))
 	return model
 
 # define the combined generator and critic model, for updating the generator
@@ -96,7 +102,7 @@ def define_gan(generator, critic):
 	# add the critic
 	model.add(critic)
 	# compile model
-	opt = RMSprop(lr=0.00005)
+	opt = RMSprop(lr=ALPHA)
 	model.compile(loss=wasserstein_loss, optimizer=opt)
 	return model
 
@@ -116,7 +122,7 @@ def load_real_samples(which_dataset):
 def generate_real_samples(dataset, n_samples):
 	# choose random instances
 	ix = randint(0, dataset.shape[0], n_samples)
-	# select images
+	# select samples
 	X = dataset[ix]
 	# generate class labels, -1 for 'real'
 	y = -ones((n_samples, 1))
@@ -141,26 +147,37 @@ def generate_fake_samples(generator, latent_dim, n_samples):
 	return X, y
 
 # generate samples and save as a plot and save the model
-def summarize_performance(step, g_model, latent_dim, n_samples=100):
+def summarize_performance(step, g_model, latent_dim, real_samples):
 	# prepare fake examples
+	n_samples = real_samples.shape[0]
 	X, _ = generate_fake_samples(g_model, latent_dim, n_samples)
-	# scale from [-1,1] to [0,1]
-	X = (X + 1) / 2.0
-	# plot images
-	for i in range(10 * 10):
-		# define subplot
-		pyplot.subplot(10, 10, 1 + i)
-		# turn off axis
-		pyplot.axis('off')
-		# plot raw pixel data
-		pyplot.imshow(X[i, :, :, 0], cmap='gray_r')
+
+	labels = ['Real'] * real_samples.shape[0] + ['Generated'] * X.shape[0]
+	real_and_fake = vstack((real_samples, X))
+	rf_two_dim = TSNE(n_components=2).fit_transform(real_and_fake)
+
+	print(rf_two_dim.shape)
+	labels = array([[num] for num in labels])
+	print(labels.shape)
+	df = pd.DataFrame(data=hstack((rf_two_dim, labels)),
+								   columns=['X1', 'X2', 'Data Type'])
+	print('DATAFRAME MADE')
+	print(df.head())
+
+	ax = sns.scatterplot(x="X1", y="X2", hue="Data Type", data=df)
+	print('SCATTERPLOT MADE')
+
 	# save plot to file
-	filename1 = 'generated_plot_%04d.png' % (step+1)
-	pyplot.savefig(filename1)
+	filename1 = './output/generated_plot_%04d_%s.png' % (step+1, dataset_name)
+	figure = ax.get_figure()
+	print('FIGURE RETRIEVED')
+	figure.savefig(filename1, dpi=400)
+	print('SCATTERPLOT SAVED')
 	pyplot.close()
 	# save the generator model
-	filename2 = 'model_%04d.h5' % (step+1)
+	filename2 = './output/model_%04d_%s.h5' % (step+1, dataset_name)
 	g_model.save(filename2)
+	print('MODEL SAVED')
 	print('>Saved: %s and %s' % (filename1, filename2))
 
 # create a line plot of loss for the gan and save to file
@@ -170,7 +187,7 @@ def plot_history(d1_hist, d2_hist, g_hist):
 	pyplot.plot(d2_hist, label='crit_fake')
 	pyplot.plot(g_hist, label='gen')
 	pyplot.legend()
-	pyplot.savefig('plot_line_plot_loss.png')
+	pyplot.savefig('./output/plot_line_plot_loss_{0}.png'.format(dataset_name))
 	pyplot.close()
 
 # train the generator and critic
@@ -212,24 +229,36 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 		print('>%d, c1=%.3f, c2=%.3f g=%.3f' % (i+1, c1_hist[-1], c2_hist[-1], g_loss))
 		# evaluate the model performance every 'epoch'
 		if (i+1) % bat_per_epo == 0:
-			summarize_performance(i, g_model, latent_dim)
+			summarize_performance(i, g_model, latent_dim, X_real)
 	# line plots of loss
 	plot_history(c1_hist, c2_hist, g_hist)
 
-# size of the latent space
-latent_dim = 50
-# create the critic
-critic = define_critic()
-# create the generator
-generator = define_generator(latent_dim)
-# create the gan
-gan_model = define_gan(generator, critic)
+
 # load correct dataset
 # 0 for synthetic
 # 1 for behavioral learning experiment
 # 2 for stop and frisk
-which_dataset = sys.argv[1]
+which_dataset = int(sys.argv[1])
+print('Which dataset: '),
+if which_dataset == 0:
+	dataset_name = 'Synthetic'
+elif which_dataset == 1:
+	dataset_name = 'Behavioral'
+else:
+	dataset_name = 'StopAndFrisk'
+print(dataset_name)
 dataset = load_real_samples(which_dataset)
 print(dataset.shape)
+
+# size of the latent space
+latent_dim = 50
+num_features = dataset.shape[1]
+# create the critic
+critic = define_critic(num_features)
+# create the generator
+generator = define_generator(num_features, latent_dim)
+# create the gan
+gan_model = define_gan(generator, critic)
+
 # train model
 train(generator, critic, gan_model, dataset, latent_dim)
