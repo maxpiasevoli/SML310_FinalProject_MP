@@ -1,5 +1,11 @@
 # Evaluating Hierarchical Models Using a WGAN
 
+## Wgan
+My version of the Wgan is in Wgan.py. This file can be run by using the command "python Wgan.py 0" in terminal.   
+
+[My version of the Wgan is modified from the code provided in this tutorial.](https://machinelearningmastery.com/how-to-code-a-wasserstein-generative-adversarial-network-wgan-from-scratch/)
+The original Wgan code for the MNIST dataset is in WganMnist.py.
+
 ## Stop and Frisk paper
 [Access Gelman's Stop and Frisk paper here](http://www.stat.columbia.edu/~gelman/research/published/frisk9.pdf)
 The relevant models (1, 3, and 4) are on pages 5-6.

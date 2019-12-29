@@ -104,6 +104,7 @@ def define_gan(generator, critic):
 	# compile model
 	opt = RMSprop(lr=ALPHA)
 	model.compile(loss=wasserstein_loss, optimizer=opt)
+	critic.trainable = True
 	return model
 
 # load images
