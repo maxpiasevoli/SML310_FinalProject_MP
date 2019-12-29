@@ -102,10 +102,10 @@ def define_gan(generator, critic):
 
 # load images
 def load_real_samples():
-	# load dataset
-	with open('mnist.pickle', 'rb') as fp:
-		trainX, trainy, _, _ = pickle.load(fp)
-	#(trainX, trainy), (_, _) = load_data()
+	# load dataset from pickle file
+	# with open('mnist.pickle', 'rb') as fp:
+	# 	trainX, trainy, _, _ = pickle.load(fp)
+	(trainX, trainy), (_, _) = load_data()
 	# select all of the examples for a given class
 	selected_ix = trainy == 7
 	X = trainX[selected_ix]
