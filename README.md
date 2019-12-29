@@ -6,6 +6,8 @@ My version of the Wgan is in Wgan.py. This file can be run by using the command 
 [My version of the Wgan is modified from the code provided in this tutorial.](https://machinelearningmastery.com/how-to-code-a-wasserstein-generative-adversarial-network-wgan-from-scratch/)
 The original Wgan code for the MNIST dataset is in WganMnist.py.
 
+The synthetic distribution data is stored in synDist.csv in the /data directory, and the code using to generate this data is the first section of code in HMM_BE_SF.R. 
+
 ## Stop and Frisk paper
 [Access Gelman's Stop and Frisk paper here](http://www.stat.columbia.edu/~gelman/research/published/frisk9.pdf)
 The relevant models (1, 3, and 4) are on pages 5-6.
