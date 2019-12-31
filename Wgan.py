@@ -18,14 +18,17 @@ from keras.layers import LeakyReLU
 from keras.layers import BatchNormalization
 from keras.initializers import RandomNormal
 from keras.constraints import Constraint
+from keras.layers import Activation
+from keras.utils.generic_utils import get_custom_objects
 from matplotlib import pyplot
 import sys
 import pandas as pd
 import seaborn as sns
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 from pylab import savefig
 
-ALPHA = 0.00005
+ALPHA = 0.001
 
 # clip model weights to a given hypercube
 class ClipConstraint(Constraint):
@@ -44,6 +47,12 @@ class ClipConstraint(Constraint):
 # calculate wasserstein loss
 def wasserstein_loss(y_true, y_pred):
 	return backend.mean(y_true * y_pred)
+
+# threshold function used for generating samples for behavioral learning data
+def custom_activation(x):
+	return np.where(x > 0, 1 , 0)
+
+get_custom_objects().update({'custom_activation': Activation(custom_activation)})
 
 # define the standalone critic model
 def define_critic(in_shape):
@@ -89,6 +98,11 @@ def define_generator(output_dim, latent_dim):
 
 	# output layer
 	model.add(Dense(output_dim, kernel_initializer=init))
+
+	# for behavioral data, map outputs to either 1 or 0
+	if dataset_name == 'Behavioral':
+		model.add(Activation(custom_activation, name='SpecialActivation'))
+
 	return model
 
 # define the combined generator and critic model, for updating the generator
@@ -112,12 +126,11 @@ def load_real_samples(which_dataset):
 	# load dataset
 	if which_dataset == 0:
 		df = pd.read_csv('./data/synDist.csv')
-		X = df.values
 	elif which_dataset == 1:
-		pass
+		df = pd.read_csv('./data/behavioral.csv')
 	else: # which_dataset == 2
-		pass
-	return X
+		df = pd.read_csv('./data/pops_and_recorded.csv')
+	return df.values
 
 # select real samples
 def generate_real_samples(dataset, n_samples):
@@ -155,15 +168,17 @@ def summarize_performance(step, g_model, latent_dim, real_samples):
 
 	labels = ['Real'] * real_samples.shape[0] + ['Generated'] * X.shape[0]
 	real_and_fake = vstack((real_samples, X))
-	rf_two_dim = TSNE(n_components=2).fit_transform(real_and_fake)
+	#rf_two_dim = TSNE(n_components=2).fit_transform(real_and_fake)
+	rf_two_dim = pca.transform(real_and_fake)
 
 	print(rf_two_dim.shape)
 	labels = array([[num] for num in labels])
 	print(labels.shape)
-	df = pd.DataFrame(data=hstack((rf_two_dim, labels)),
-								   columns=['X1', 'X2', 'Data Type'])
+	df = pd.DataFrame(data=rf_two_dim,
+					  columns=['X1', 'X2'])
+	df['Data Type'] = labels
 	print('DATAFRAME MADE')
-	print(df.head())
+	print(df)
 
 	ax = sns.scatterplot(x="X1", y="X2", hue="Data Type", data=df)
 	print('SCATTERPLOT MADE')
@@ -196,7 +211,8 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 	# calculate the number of batches per training epoch
 	bat_per_epo = int(dataset.shape[0] / n_batch)
 	# calculate the number of training iterations
-	n_steps = bat_per_epo * n_epochs
+	#n_steps = bat_per_epo * n_epochs
+	n_steps = 20000
 	# calculate the size of half a batch of samples
 	half_batch = int(n_batch / 2)
 	# lists for keeping track of loss
@@ -229,7 +245,8 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 		# summarize loss on this batch
 		print('>%d, c1=%.3f, c2=%.3f g=%.3f' % (i+1, c1_hist[-1], c2_hist[-1], g_loss))
 		# evaluate the model performance every 'epoch'
-		if (i+1) % bat_per_epo == 0:
+		#if (i+1) % bat_per_epo == 0:
+		if (i+1) % (n_steps // 10) == 0:
 			summarize_performance(i, g_model, latent_dim, X_real)
 	# line plots of loss
 	plot_history(c1_hist, c2_hist, g_hist)
@@ -260,6 +277,8 @@ critic = define_critic(num_features)
 generator = define_generator(num_features, latent_dim)
 # create the gan
 gan_model = define_gan(generator, critic)
+
+pca = PCA(n_components=2).fit(dataset)
 
 # train model
 train(generator, critic, gan_model, dataset, latent_dim)

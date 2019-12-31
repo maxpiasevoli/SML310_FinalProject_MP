@@ -160,11 +160,11 @@ def summarize_performance(step, g_model, latent_dim, n_samples=100):
 		# plot raw pixel data
 		pyplot.imshow(X[i, :, :, 0], cmap='gray_r')
 	# save plot to file
-	filename1 = 'generated_plot_%04d.png' % (step+1)
+	filename1 = './output/mnist_generated_plot_%04d.png' % (step+1)
 	pyplot.savefig(filename1)
 	pyplot.close()
 	# save the generator model
-	filename2 = 'model_%04d.h5' % (step+1)
+	filename2 = './output/mnist_model_%04d.h5' % (step+1)
 	g_model.save(filename2)
 	print('>Saved: %s and %s' % (filename1, filename2))
 
@@ -175,7 +175,7 @@ def plot_history(d1_hist, d2_hist, g_hist):
 	pyplot.plot(d2_hist, label='crit_fake')
 	pyplot.plot(g_hist, label='gen')
 	pyplot.legend()
-	pyplot.savefig('plot_line_plot_loss.png')
+	pyplot.savefig('./output/mnist_plot_line_plot_loss.png')
 	pyplot.close()
 
 # train the generator and critic

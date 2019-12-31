@@ -23,7 +23,7 @@ X = cbind(X1, X2, X3, X4, X5, X6)
 # behavioral learning experiment hierarchical models
 
 # read-in data 
-y1 <- as.matrix (read.table ("dogs.dat"), nrows=30, ncol=25)
+y1 <- as.matrix (read.table ("./data/dogs.dat"), nrows=30, ncol=25)
 y <- ifelse (y1[,]=="S",1,0)
 n.dogs <- nrow(y)
 n.trials <- ncol(y)
@@ -72,10 +72,9 @@ y.rep.m2[1,,]
 #write.csv(y.rep.m2[1,,], file='./bl_m2.csv')
 
 # stop and frisk models
-#n.ep <- as.data.frame(read.csv("2014_arrests.csv", sep=","))
-n.ep <- as.data.frame(read.csv("2014_arrests_ones.csv", sep=","))
-y.ep <- as.data.frame(read.csv("20152016_stops.csv", sep=","))
-n.ep.z <- as.data.frame(read.csv("2014_arrests_zeros.csv", sep=","))
+n.ep <- as.data.frame(read.csv("./data/2014_arrests_ones.csv", sep=","))
+y.ep <- as.data.frame(read.csv("./data/20152016_stops.csv", sep=","))
+n.ep.z <- as.data.frame(read.csv("./data/2014_arrests_zeros.csv", sep=","))
 #n.ep <- as.data.frame(read.csv("2014_arrests_all_crimes.csv", sep=","))
 #y.ep <- as.data.frame(read.csv("20152016_stops_all_crimes.csv", sep=","))
 #n.ep.z <- as.data.frame(read.csv("2014_arrests_zeros_all_crimes.csv", sep=","))
@@ -172,3 +171,48 @@ current.y.ep$Y_Pred_M5 = samples_m5
 alpha_m5
 
 #write.csv(current.y.ep, file='./sf_all_models_w_reps.csv')
+
+# combine ethnic populations with predicted stops for wgan
+eth_pops = matrix(n.ep.lt10$Eth_Pop_In_Precinct, nrow=30, byrow=TRUE)
+recorded_stops = matrix(current.y.ep$Occurrences, nrow=30, byrow=TRUE)
+model_3_stops = matrix(current.y.ep$Y_Pred_M3, nrow=30, byrow=TRUE)
+model_4_stops = matrix(current.y.ep$Y_Pred_M4, nrow=30, byrow=TRUE)
+model_5_stops = matrix(current.y.ep$Y_Pred_M5, nrow=30, byrow=TRUE)
+eth_total = 1:nrow(eth_pops)
+for (i in 1:nrow(eth_pops)) {
+  eth_total[i] = eth_pops[i,1] + eth_pops[i,2] + eth_pops[i,3]
+}
+
+pops_and_preds_m3 = data.frame(white_pop = eth_pops[,1],
+                               black_pop = eth_pops[,2],
+                               hisp_pop = eth_pops[,3],
+                               pop_total = eth_total,
+                               pred_white = model_3_stops[,1],
+                               pred_black = model_3_stops[,2],
+                               pred_hisp = model_3_stops[,3])
+pops_and_preds_m4 = data.frame(white_pop = eth_pops[,1],
+                               black_pop = eth_pops[,2],
+                               hisp_pop = eth_pops[,3],
+                               pop_total = eth_total,
+                               pred_white = model_4_stops[,1],
+                               pred_black = model_4_stops[,2],
+                               pred_hisp = model_4_stops[,3])
+pops_and_preds_m5 = data.frame(white_pop = eth_pops[,1],
+                               black_pop = eth_pops[,2],
+                               hisp_pop = eth_pops[,3],
+                               pop_total = eth_total,
+                               pred_white = model_5_stops[,1],
+                               pred_black = model_5_stops[,2],
+                               pred_hisp = model_5_stops[,3])
+pops_and_recorded = data.frame(white_pop = eth_pops[,1],
+                               black_pop = eth_pops[,2],
+                               hisp_pop = eth_pops[,3],
+                               pop_total = eth_total,
+                               stops_white = recorded_stops[,1],
+                               stops_black = recorded_stops[,2],
+                               stops_hisp = recorded_stops[,3])
+write.csv(pops_and_preds_m3, file='./pops_and_preds_m3.csv')
+write.csv(pops_and_preds_m4, file='./pops_and_preds_m4.csv')
+write.csv(pops_and_preds_m5, file='./pops_and_preds_m5.csv')
+write.csv(pops_and_recorded, file='./pops_and_recorded.csv')
+    
