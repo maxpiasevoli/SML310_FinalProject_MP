@@ -166,30 +166,34 @@ def summarize_performance(step, g_model, latent_dim, real_samples):
 	n_samples = real_samples.shape[0]
 	X, _ = generate_fake_samples(g_model, latent_dim, n_samples)
 
-	labels = ['Real'] * real_samples.shape[0] + ['Generated'] * X.shape[0]
-	real_and_fake = vstack((real_samples, X))
-	#rf_two_dim = TSNE(n_components=2).fit_transform(real_and_fake)
-	rf_two_dim = pca.transform(real_and_fake)
+	if dataset_name == 'Behavioral':
+		numpy.savetxt("sample_trials_{0}.csv".format(step+1), X, delimiter=",")
+	else:
+		labels = ['Real'] * real_samples.shape[0] + ['Generated'] * X.shape[0]
+		real_and_fake = vstack((real_samples, X))
+		#rf_two_dim = TSNE(n_components=2).fit_transform(real_and_fake)
+		rf_two_dim = pca.transform(real_and_fake)
 
-	print(rf_two_dim.shape)
-	labels = array([[num] for num in labels])
-	print(labels.shape)
-	df = pd.DataFrame(data=rf_two_dim,
-					  columns=['X1', 'X2'])
-	df['Data Type'] = labels
-	print('DATAFRAME MADE')
-	print(df)
+		print(rf_two_dim.shape)
+		labels = array([[num] for num in labels])
+		print(labels.shape)
+		df = pd.DataFrame(data=rf_two_dim,
+						  columns=['X1', 'X2'])
+		df['Data Type'] = labels
+		print('DATAFRAME MADE')
+		print(df)
 
-	ax = sns.scatterplot(x="X1", y="X2", hue="Data Type", data=df)
-	print('SCATTERPLOT MADE')
+		ax = sns.scatterplot(x="X1", y="X2", hue="Data Type", data=df)
+		print('SCATTERPLOT MADE')
 
-	# save plot to file
-	filename1 = './output/generated_plot_%04d_%s.png' % (step+1, dataset_name)
-	figure = ax.get_figure()
-	print('FIGURE RETRIEVED')
-	figure.savefig(filename1, dpi=400)
-	print('SCATTERPLOT SAVED')
-	pyplot.close()
+		# save plot to file
+		filename1 = './output/generated_plot_%04d_%s.png' % (step+1, dataset_name)
+		figure = ax.get_figure()
+		print('FIGURE RETRIEVED')
+		figure.savefig(filename1, dpi=400)
+		print('SCATTERPLOT SAVED')
+		pyplot.close()
+
 	# save the generator model
 	filename2 = './output/model_%04d_%s.h5' % (step+1, dataset_name)
 	g_model.save(filename2)
@@ -250,6 +254,10 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 			summarize_performance(i, g_model, latent_dim, X_real)
 	# line plots of loss
 	plot_history(c1_hist, c2_hist, g_hist)
+
+	crit_filename = './output/critic_%s.h5' % (step+1, dataset_name)
+	c_model.save(crit_filename)
+	print('CRITIC SAVED')
 
 
 # load correct dataset
