@@ -262,10 +262,10 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 	print('CRITIC SAVED')
 
 	# calculate average log likelihood
-	X = vstack((c_model.predict(X_real), c_model.predict(X_fake)))
-	X = X.astype('float64')
+	x_real_scores = c_model.predict(X_real)
+	x_fake_scores = c_model.predict(X_fake)
 	y = asarray([1.0] * X_real.shape[0] + [0.0] * X_fake.shape[0])
-	avg_log_like = calcAvgLogLike(X, y)
+	avg_log_like = calcAvgLogLike(x_real_scores, x_fake_scores, y)
 	print('Avg Log Likelihood: {0}'.format(avg_log_like))
 
 
