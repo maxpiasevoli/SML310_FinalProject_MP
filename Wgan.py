@@ -1,6 +1,7 @@
 # example of a wgan for generating handwritten digits
 from numpy import expand_dims
 from numpy import mean
+from numpy import asarray
 from numpy import ones, array
 from numpy import hstack, vstack
 from numpy.random import randn
@@ -27,6 +28,7 @@ import seaborn as sns
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from pylab import savefig
+from criticToProb import calcAvgLogLike
 
 ALPHA = 0.001
 
@@ -216,7 +218,7 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 	bat_per_epo = int(dataset.shape[0] / n_batch)
 	# calculate the number of training iterations
 	#n_steps = bat_per_epo * n_epochs
-	n_steps = 20000
+	n_steps = 100 #20000
 	# calculate the size of half a batch of samples
 	half_batch = int(n_batch / 2)
 	# lists for keeping track of loss
@@ -255,9 +257,16 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 	# line plots of loss
 	plot_history(c1_hist, c2_hist, g_hist)
 
-	crit_filename = './output/critic_%s.h5' % (step+1, dataset_name)
+	crit_filename = './output/critic_%s.h5' % (dataset_name)
 	c_model.save(crit_filename)
 	print('CRITIC SAVED')
+
+	# calculate average log likelihood
+	X = vstack((c_model.predict(X_real), c_model.predict(X_fake)))
+	X = X.astype('float64')
+	y = asarray([1.0] * X_real.shape[0] + [0.0] * X_fake.shape[0])
+	avg_log_like = calcAvgLogLike(X, y)
+	print('Avg Log Likelihood: {0}'.format(avg_log_like))
 
 
 # load correct dataset
