@@ -18,12 +18,12 @@ X5 = rnorm(h1 * h2, 9)
 X6 = rnorm(h1/h2, 9)
 
 X = cbind(X1, X2, X3, X4, X5, X6)
-#write.csv(X, row.names=FALSE, file='synDist.csv')
+#write.csv(X, row.names=FALSE, file='./data/synDist.csv')
 
 # behavioral learning experiment hierarchical models
 
 # read-in data 
-y1 <- as.matrix (read.table ("./data/dogs.dat"), nrows=30, ncol=25)
+y1 <- as.matrix (read.table ("./data/dogs.dat", skip=1), nrows=30, ncol=25)
 y <- ifelse (y1[,]=="S",1,0)
 n.dogs <- nrow(y)
 n.trials <- ncol(y)
@@ -38,18 +38,19 @@ beta1 <- colMeans(post1$beta)
 ## generate samples for model 1
 n.sims <- 1
 y.rep.m1 <- array (NA, c(n.sims, n.dogs, n.trials))
+p.rep.m1 <- array (NA, c(n.sims, n.dogs, n.trials))
 for (j in 1:n.dogs){
   n.avoid.rep <- rep (0, n.sims)
   n.shock.rep <- rep (0, n.sims)
   for (t in 1:n.trials){  
-    p.rep <- plogis (beta1[1] + beta1[2]*n.avoid.rep + beta1[3]*n.shock.rep)
-    y.rep.m1[,j,t] <- rbinom (n.sims, 1, p.rep)
+    p.rep.m1[,j,t] <- plogis (beta1[1] + beta1[2]*n.avoid.rep + beta1[3]*n.shock.rep)
+    y.rep.m1[,j,t] <- rbinom (n.sims, 1, p.rep.m1[,j,t])
     n.avoid.rep <- n.avoid.rep + 1 - y.rep.m1[,j,t] 
     n.shock.rep <- n.shock.rep + y.rep.m1[,j,t] 
   }
 }
-y.rep.m1[1,,]
-#write.csv(y.rep.m1[1,,], file='./bl_m1.csv')
+m1_avg_ll = sum(log(y * p.rep.m1[1,,] + (1-y) * (1-p.rep.m1[1,,]))) / n.dogs
+#write.csv(y.rep.m1[1,,], file='./data/bl_m1.csv')
 
 dogs.sf2 <- stan(file='dogs_no_int.stan', data=dataList.1, iter=1000, chains=4) # model with intercept
 print(dogs.sf2, pars = c("beta","lp__"))
@@ -58,18 +59,21 @@ beta2 <- colMeans(post2$beta)
 
 n.sims <- 1
 y.rep.m2 <- array (NA, c(n.sims, n.dogs, n.trials))
+p.rep.m2 <- array (NA, c(n.sims, n.dogs, n.trials))
 for (j in 1:n.dogs){
   n.avoid.rep <- rep (0, n.sims)
   n.shock.rep <- rep (0, n.sims)
   for (t in 1:n.trials){  
-    p.rep <- exp(beta2[1]*n.avoid.rep + beta2[2]*n.shock.rep)
-    y.rep.m2[,j,t] <- rbinom (n.sims, 1, p.rep)
+    p.rep.m2[,j,t] <- exp(beta2[1]*n.avoid.rep + beta2[2]*n.shock.rep)
+    y.rep.m2[,j,t] <- rbinom (n.sims, 1, p.rep.m2[,j,t])
     n.avoid.rep <- n.avoid.rep + 1 - y.rep.m2[,j,t] 
     n.shock.rep <- n.shock.rep + y.rep.m2[,j,t] 
   }
 }
+m2_avg_ll = sum(log(y * p.rep.m2[1,,] + (1-y) * (1-p.rep.m2[1,,]))) / n.dogs
 y.rep.m2[1,,]
-#write.csv(y.rep.m2[1,,], file='./bl_m2.csv')
+#write.csv(y.rep.m2[1,,], file='./data/bl_m2.csv')
+
 
 # stop and frisk models
 n.ep <- as.data.frame(read.csv("./data/2014_arrests_ones.csv", sep=","))
@@ -172,6 +176,17 @@ alpha_m5
 
 #write.csv(current.y.ep, file='./sf_all_models_w_reps.csv')
 
+# calculate log-likelihood 
+calc_avg_ll <- function(samples, lambdas) {
+  n = length(samples)
+  log_sum = sum(log(dpois(samples, lambdas)))
+  avg_ll = log_sum / n
+}
+m3_avg_ll = calc_avg_ll(current.y.ep$Occurrences, lambdas_m3)
+m4_avg_ll = calc_avg_ll(current.y.ep$Occurrences, lambdas_m4)
+m5_avg_ll = calc_avg_ll(current.y.ep$Occurrences, lambdas_m5)
+
+
 # combine ethnic populations with predicted stops for wgan
 eth_pops = matrix(n.ep.lt10$Eth_Pop_In_Precinct, nrow=30, byrow=TRUE)
 recorded_stops = matrix(current.y.ep$Occurrences, nrow=30, byrow=TRUE)
@@ -211,8 +226,8 @@ pops_and_recorded = data.frame(white_pop = eth_pops[,1],
                                stops_white = recorded_stops[,1],
                                stops_black = recorded_stops[,2],
                                stops_hisp = recorded_stops[,3])
-write.csv(pops_and_preds_m3, file='./pops_and_preds_m3.csv')
-write.csv(pops_and_preds_m4, file='./pops_and_preds_m4.csv')
-write.csv(pops_and_preds_m5, file='./pops_and_preds_m5.csv')
-write.csv(pops_and_recorded, file='./pops_and_recorded.csv')
+write.csv(pops_and_preds_m3, file='./data/pops_and_preds_m3.csv')
+write.csv(pops_and_preds_m4, file='./data/pops_and_preds_m4.csv')
+write.csv(pops_and_preds_m5, file='./data/pops_and_preds_m5.csv')
+write.csv(pops_and_recorded, file='./data/pops_and_recorded.csv')
     
