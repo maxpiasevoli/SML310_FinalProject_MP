@@ -190,7 +190,7 @@ def summarize_performance(step, g_model, latent_dim, real_samples):
 		print('SCATTERPLOT MADE')
 
 		# save plot to file
-		filename1 = './output/generated_plot_%04d_%s.png' % (step+1, dataset_name)
+		filename1 = './output/generated_plot_%04d_%s_%s.png' % (step+1, dataset_name, tag)
 		figure = ax.get_figure()
 		print('FIGURE RETRIEVED')
 		figure.savefig(filename1, dpi=400)
@@ -198,7 +198,7 @@ def summarize_performance(step, g_model, latent_dim, real_samples):
 		pyplot.close()
 
 	# save the generator model
-	filename2 = './output/model_%04d_%s.h5' % (step+1, dataset_name)
+	filename2 = './output/model_%04d_%s_%s.h5' % (step+1, dataset_name, tag)
 	g_model.save(filename2)
 	print('MODEL SAVED')
 	print('>Saved: %s and %s' % (filename1, filename2))
@@ -210,7 +210,7 @@ def plot_history(d1_hist, d2_hist, g_hist):
 	pyplot.plot(d2_hist, label='crit_fake')
 	pyplot.plot(g_hist, label='gen')
 	pyplot.legend()
-	pyplot.savefig('./output/plot_line_plot_loss_{0}.png'.format(dataset_name))
+	pyplot.savefig('./output/plot_line_plot_loss_{0}_{1}.png'.format(dataset_name, tag))
 	pyplot.close()
 
 # train the generator and critic
@@ -258,7 +258,7 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 	# line plots of loss
 	plot_history(c1_hist, c2_hist, g_hist)
 
-	crit_filename = './output/critic_%s.h5' % (dataset_name)
+	crit_filename = './output/critic_%s_%s.h5' % (dataset_name, tag)
 	c_model.save(crit_filename)
 	print('CRITIC SAVED')
 
@@ -266,6 +266,8 @@ def train(g_model, c_model, gan_model, dataset, latent_dim, n_epochs=10, n_batch
 	X_fake, y_fake = generate_fake_samples(g_model, latent_dim, dataset.shape[0])
 	x_real_scores = c_model.predict(dataset)
 	x_fake_scores = c_model.predict(X_fake)
+	np.savetxt("./output/fake_samples_{0}_{1}.csv".format(dataset_name, tag), X_fake, delimiter=",")
+	print('Fake samples saved')
 	y = asarray([1.0] * x_real_scores.shape[0] + [0.0] * X_fake.shape[0])
 	avg_log_like = calcAvgLogLike(x_real_scores, x_fake_scores, y)
 	print('Avg Log Likelihood: {0}'.format(avg_log_like))
@@ -297,6 +299,8 @@ else:
 print(dataset_name)
 dataset = load_real_samples(which_dataset)
 print(dataset.shape)
+
+tag = sys.argv[2]
 
 # size of the latent space
 latent_dim = 50
